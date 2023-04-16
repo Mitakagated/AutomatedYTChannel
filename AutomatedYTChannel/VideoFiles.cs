@@ -1,25 +1,29 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using Xabe.FFmpeg;
 
 namespace AutomatedYTChannel
 {
     internal class VideoFiles
     {
-        string[] InputFiles;
-        string OutputFileName = "/result.mp4";
-        public static string ReadSettings()
+        internal string[] InputFiles;
+        internal string OutputFileName = "/result.mp4";
+        internal string OutputFolder;
+        public void ReadSettings()
         {
             if (!File.Exists(Environment.GetFolderPath(Environment.SpecialFolder.Personal) + "/videopath.json"))
             {
                 var DocumentsFolder = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
                 var output = new Output
                 {
-                    OutputPath = Environment.GetFolderPath(Environment.SpecialFolder.MyVideos)+"\\result.mp4"
+                    OutputPath = Environment.GetFolderPath(Environment.SpecialFolder.MyVideos)+"\\result.mp4",
+                    InputPath = Environment.GetFolderPath(Environment.SpecialFolder.MyVideos)
                 };
                 var options = new JsonSerializerOptions { WriteIndented = true, IncludeFields = true };
                 string fileName = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal)+"/videopath.json");
@@ -28,15 +32,27 @@ namespace AutomatedYTChannel
             }
             string Json = File.ReadAllText(Environment.GetFolderPath(Environment.SpecialFolder.Personal) + "/videopath.json");
             Output output1 = JsonSerializer.Deserialize<Output>(Json);
-            return output1.OutputPath;
-
-            //sled kato se izbere papkata, se gledat vsichkite filove koito matchvat video filove i se dobavqt kym InputFiles
-            //sled tova shte callne SaveVideo funkciqta koqto da zadade ime i lokaciq na novoto video
+            OutputFolder = output1.OutputPath;
+            InputFiles = Directory.GetFiles(output1.InputPath, "*.mp4");
+            return;
+        }
+        public async Task CreateVideo()
+        {
+            string output = OutputFolder;
+            var conversion = await FFmpeg.Conversions.FromSnippet.Concatenate(output, InputFiles);
+            conversion.OnProgress += (sender, args) =>
+            {
+                var percent = (int)(Math.Round(args.Duration.TotalSeconds / args.TotalLength.TotalSeconds, 2) * 100);
+                Debug.WriteLine($"[{args.Duration} / {args.TotalLength}] {percent}%");
+            };
+            await conversion.Start();
         }
     }
     internal class Output
     {
         [JsonInclude]
         public string OutputPath { get; set; }
+        [JsonInclude]
+        public string InputPath { get; set; }
     }
 }

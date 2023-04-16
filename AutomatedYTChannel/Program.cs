@@ -1,6 +1,10 @@
-﻿// See https://aka.ms/new-console-template for more information
-using AutomatedYTChannel;
+﻿using AutomatedYTChannel;
 
-Console.WriteLine("Hello, World!");
-var OutputFile = VideoFiles.ReadSettings();
-Console.WriteLine(OutputFile);
+var videoFiles = new VideoFiles();
+videoFiles.ReadSettings();
+foreach (var InputFile in videoFiles.InputFiles)
+{
+    Console.WriteLine(InputFile);
+}
+Console.WriteLine(videoFiles.OutputFolder);
+await videoFiles.CreateVideo();
