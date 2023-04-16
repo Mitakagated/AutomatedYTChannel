@@ -2,4 +2,5 @@
 using AutomatedYTChannel;
 
 Console.WriteLine("Hello, World!");
-VideoFiles.ReadSettings();
+var OutputFile = VideoFiles.ReadSettings();
+Console.WriteLine(OutputFile);

@@ -12,7 +12,7 @@ namespace AutomatedYTChannel
     {
         string[] InputFiles;
         string OutputFileName = "/result.mp4";
-        public static void ReadSettings()
+        public static string ReadSettings()
         {
             if (!File.Exists(Environment.GetFolderPath(Environment.SpecialFolder.Personal) + "/videopath.json"))
             {
@@ -28,7 +28,7 @@ namespace AutomatedYTChannel
             }
             string Json = File.ReadAllText(Environment.GetFolderPath(Environment.SpecialFolder.Personal) + "/videopath.json");
             Output output1 = JsonSerializer.Deserialize<Output>(Json);
-            Console.WriteLine(output1.OutputPath);
+            return output1.OutputPath;
 
             //sled kato se izbere papkata, se gledat vsichkite filove koito matchvat video filove i se dobavqt kym InputFiles
             //sled tova shte callne SaveVideo funkciqta koqto da zadade ime i lokaciq na novoto video
