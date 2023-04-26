@@ -19,7 +19,6 @@ namespace AutomatedYTChannel
         {
             if (!File.Exists(Environment.GetFolderPath(Environment.SpecialFolder.Personal) + "/videopath.json"))
             {
-                var DocumentsFolder = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
                 var output = new Output
                 {
                     OutputPath = Environment.GetFolderPath(Environment.SpecialFolder.MyVideos)+"\\result.mp4",
@@ -39,11 +38,15 @@ namespace AutomatedYTChannel
         public async Task CreateVideo()
         {
             string output = OutputFolder;
+            if (File.Exists(output))
+            {
+                File.Delete(output);
+            }
             var conversion = await FFmpeg.Conversions.FromSnippet.Concatenate(output, InputFiles);
             conversion.OnProgress += (sender, args) =>
             {
                 var percent = (int)(Math.Round(args.Duration.TotalSeconds / args.TotalLength.TotalSeconds, 2) * 100);
-                Debug.WriteLine($"[{args.Duration} / {args.TotalLength}] {percent}%");
+                Console.WriteLine($"[{args.Duration} / {args.TotalLength}] {percent}%");
             };
             await conversion.Start();
         }
