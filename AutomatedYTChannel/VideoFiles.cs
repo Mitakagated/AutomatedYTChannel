@@ -15,21 +15,24 @@ namespace AutomatedYTChannel
         internal string[] InputFiles;
         internal string OutputFileName = "/result.mp4";
         internal string OutputFolder;
+        public string GetOutputFolder { get { return OutputFolder; } }
+        internal string PersonalFolder = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
+        internal string DefaultVideosFolder = Environment.GetFolderPath(Environment.SpecialFolder.MyVideos);
         public void ReadSettings()
         {
-            if (!File.Exists(Environment.GetFolderPath(Environment.SpecialFolder.Personal) + "/videopath.json"))
+            if (!File.Exists(PersonalFolder + "/videopath.json"))
             {
                 var output = new Output
                 {
-                    OutputPath = Environment.GetFolderPath(Environment.SpecialFolder.MyVideos)+"\\result.mp4",
-                    InputPath = Environment.GetFolderPath(Environment.SpecialFolder.MyVideos)
+                    OutputPath = DefaultVideosFolder + "\\result.mp4",
+                    InputPath = DefaultVideosFolder
                 };
                 var options = new JsonSerializerOptions { WriteIndented = true, IncludeFields = true };
-                string fileName = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal)+"/videopath.json");
+                string fileName = Path.Combine(PersonalFolder + "/videopath.json");
                 string json = JsonSerializer.Serialize(output, options);
                 File.WriteAllText(fileName, json);
             }
-            string Json = File.ReadAllText(Environment.GetFolderPath(Environment.SpecialFolder.Personal) + "/videopath.json");
+            string Json = File.ReadAllText(PersonalFolder + "/videopath.json");
             Output output1 = JsonSerializer.Deserialize<Output>(Json);
             OutputFolder = output1.OutputPath;
             InputFiles = Directory.GetFiles(output1.InputPath, "*.mp4");
@@ -40,7 +43,8 @@ namespace AutomatedYTChannel
             string output = OutputFolder;
             if (File.Exists(output))
             {
-                File.Delete(output);
+                var CurrentTime = DateTime.Now.ToString("d.M.yyyy-H-m-ss");
+                File.Move(output, $"{DefaultVideosFolder}/{CurrentTime}.mp4");
             }
             var conversion = await FFmpeg.Conversions.FromSnippet.Concatenate(output, InputFiles);
             conversion.OnProgress += (sender, args) =>
@@ -49,6 +53,13 @@ namespace AutomatedYTChannel
                 Console.WriteLine($"[{args.Duration} / {args.TotalLength}] {percent}%");
             };
             await conversion.Start();
+        }
+        public async Task Start()
+        {
+            await CreateVideo();
+            Console.WriteLine($"Successfully created the video at '{OutputFolder}'.");
+            Console.WriteLine("Press any key to exit.");
+            Console.Read();
         }
     }
     internal class Output
