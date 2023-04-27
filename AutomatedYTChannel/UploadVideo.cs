@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Text.Json;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Services;
 using Google.Apis.Upload;
@@ -12,39 +13,50 @@ namespace AutomatedYTChannel
         public async Task Run()
         {
             UserCredential credential;
-            using (var stream = new FileStream($"{Environment.GetFolderPath(Environment.SpecialFolder.Personal)}/client_secrets.json", FileMode.Open, FileAccess.Read))
+            using (var stream = new FileStream($"{PersonalFolder}/client_secrets.json", FileMode.Open, FileAccess.Read))
             {
-            credential = await GoogleWebAuthorizationBroker.AuthorizeAsync(
-            GoogleClientSecrets.FromStream(stream).Secrets,
-            // This OAuth 2.0 access scope allows an application to upload files to the
-            // authenticated user's YouTube channel, but doesn't allow other types of access.
-            new[] { YouTubeService.Scope.YoutubeUpload },
-            "user",
-            CancellationToken.None
-            );
+                credential = await GoogleWebAuthorizationBroker.AuthorizeAsync(
+                GoogleClientSecrets.FromStream(stream).Secrets,
+                new[] { YouTubeService.Scope.YoutubeUpload },
+                "Dimitar Petrov",
+                CancellationToken.None
+                );
             }
             var youtubeService = new YouTubeService(new BaseClientService.Initializer()
             {
                 HttpClientInitializer = credential,
                 ApplicationName = Assembly.GetExecutingAssembly().GetName().Name
             });
-        var video = new Video
-        {
-            Snippet = new VideoSnippet
+
+            if (!File.Exists(PersonalFolder + "/videooptions.json"))
             {
-                Title = "Default Video Title",
-                Description = "Default Video Description",
-                Tags = new string[] { "tag1", "tag2" },
-                CategoryId = "22" // See https://developers.google.com/youtube/v3/docs/videoCategories/list
-            },
-            Status = new VideoStatus()
-            };
-            video.Status.PrivacyStatus = "unlisted"; // or "private" or "public"
-            var filePath = $"{GetOutputFolder}"; // Replace with path to actual movie file.
+                var video = new Video
+                {
+                    Snippet = new VideoSnippet
+                    {
+                        Title = "Default Video Title",
+                        Description = "Default Video Description",
+                        Tags = new string[] { "tag1", "tag2" },
+                        CategoryId = "20" // See https://developers.google.com/youtube/v3/docs/videoCategories/list
+                    },
+                    Status = new VideoStatus()
+                };
+                var options = new JsonSerializerOptions { WriteIndented = true, IncludeFields = true };
+                var fileName = Path.Combine(PersonalFolder + "/videooptions.json");
+                var json = JsonSerializer.Serialize(video, options);
+                File.WriteAllText(fileName, json);
+            }
+
+            var Json = File.ReadAllText(PersonalFolder + "/videooptions.json");
+            var video1 = JsonSerializer.Deserialize<Video>(Json);
+            ReadSettings();
+
+            video1.Status.PrivacyStatus = "private"; // or "private" or "public"
+            var filePath = $"{OutputFolder}";
 
             using (var fileStream = new FileStream(filePath, FileMode.Open))
             {
-                var videosInsertRequest = youtubeService.Videos.Insert(video, "snippet,status", fileStream, "video/*");
+                var videosInsertRequest = youtubeService.Videos.Insert(video1, "snippet,status", fileStream, "video/*");
                 videosInsertRequest.ProgressChanged += VideosInsertRequest_ProgressChanged;
                 videosInsertRequest.ResponseReceived += VideosInsertRequest_ResponseReceived;
 

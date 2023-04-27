@@ -40,6 +40,7 @@ namespace AutomatedYTChannel
         }
         public async Task CreateVideo()
         {
+            ReadSettings();
             string output = OutputFolder;
             if (File.Exists(output))
             {
@@ -56,10 +57,9 @@ namespace AutomatedYTChannel
         }
         public async Task Start()
         {
+            var uploadVideo = new UploadVideo();
             await CreateVideo();
-            Console.WriteLine($"Successfully created the video at '{OutputFolder}'.");
-            Console.WriteLine("Press any key to exit.");
-            Console.Read();
+            await uploadVideo.Run();
         }
     }
     internal class Output
